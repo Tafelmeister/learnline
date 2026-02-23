@@ -1,16 +1,353 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Troesti Extern</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Trostautomat</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #c8b87a;
+  }
+
+  body {
+    font-family: 'Trebuchet MS', Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  #app {
+    position: relative;
+    width: 390px;
+    height: 844px;
+    overflow: hidden;
+    transform-origin: top center;
+    transform: scale(var(--app-scale, 1));
+  }
+
+  #bg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 390px; height: 844px;
+    z-index: 0;
+  }
+
+  #fs-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    z-index: 30;
+    background: rgba(255,248,220,0.7);
+    border: none;
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+
+  #startscreen {
+    position: absolute;
+    top: 0; left: 0;
+    width: 390px; height: 714px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #starttext {
+    text-align: center;
+    padding: 18px 24px;
+    color: #3a2e10;
+    background: rgba(255,248,220,0.85);
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+    max-width: 320px;
+  }
+  #starttext h1 {
+    font-size: 1.1rem;
+    font-weight: bold;
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+  #starttext p {
+ font-size: 0.9rem;
+ line-height: 1.5;
+ color: #4a3a18;
+}
+
+  #wildschwein {
+    position: absolute;
+    z-index: 5;
+    width: 200px;
+    height: auto;
+    left: 420px;
+    bottom: 224px;
+  }
+
+  #finalebild {
+    position: absolute;
+    top: 0; left: 0;
+    width: 390px; height: 844px;
+    z-index: 15;
+    display: none; opacity: 0;
+    transition: opacity 1.0s ease;
+  }
+  #finalebild img { width: 390px; height: 844px; object-fit: contain; }
+  #finalebild.sichtbar     { display: block; }
+  #finalebild.eingeblendet { opacity: 1; }
+
+  @keyframes einlaufen {
+    from { transform: translateX(0); }
+    to   { transform: translateX(var(--move)); }
+  }
+  @keyframes auslaufen {
+    from { transform: translateX(0); }
+    to   { transform: translateX(var(--move-out)); }
+  }
+  @keyframes scheuern {
+    0%   { transform: translateX(0);    }
+    12%  { transform: translateX(-7px); }
+    25%  { transform: translateX(7px);  }
+    37%  { transform: translateX(-8px); }
+    50%  { transform: translateX(8px);  }
+    62%  { transform: translateX(-6px); }
+    75%  { transform: translateX(6px);  }
+    87%  { transform: translateX(-3px); }
+    100% { transform: translateX(0);    }
+  }
+  @keyframes scheuern_wild {
+    0%   { transform: translateX(0);     }
+    7%   { transform: translateX(-12px); }
+    14%  { transform: translateX(12px);  }
+    21%  { transform: translateX(-14px); }
+    28%  { transform: translateX(14px);  }
+    35%  { transform: translateX(-13px); }
+    42%  { transform: translateX(13px);  }
+    49%  { transform: translateX(-11px); }
+    56%  { transform: translateX(11px);  }
+    70%  { transform: translateX(-7px);  }
+    84%  { transform: translateX(7px);   }
+    100% { transform: translateX(0);     }
+  }
+
+  #button-area {
+    position: absolute;
+    top: 708px;
+    left: 0; right: 0;
+    height: 136px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .action-btn {
+    font-family: 'Trebuchet MS', Arial, sans-serif;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #fff;
+    background: #cc2200;
+    border: none;
+    border-radius: 26px;
+    padding: 11px 44px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    transition: transform 0.12s;
+  }
+  .action-btn:active { transform: scale(0.88); background: #aa1800; }
+
+  #trost-btn {
+    background: none; border: none; padding: 0;
+    cursor: pointer; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.12s;
+    display: none;
+  }
+  #trost-btn img {
+    width: 75px; height: 75px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    display: block;
+  }
+  #trost-btn:active { transform: scale(0.85); }
+
+  #nochmal-btn { display: none; }
+  #los-btn     { display: block; }
+
+ #starttext p.lead {
+   font-style: normal;
+   font-weight: 400;
+   color: #3a2e10;
+ }
+ #starttext p.sprichwort {
+   font-style: italic;
+   font-weight: 700;
+   color: #0b2e83;
+ }
+</style>
 </head>
 <body>
-    <h1>Welcome to Troesti External Resources</h1>
-    <img src="https://raw.githubusercontent.com/Tafelmeister/learnline/main/path/to/your/image.jpg" alt="Example Image">
-    <audio controls>
-        <source src="https://raw.githubusercontent.com/Tafelmeister/learnline/main/path/to/your/audio.mp3" type="audio/mpeg">
-        Your browser does not support the audio tag.
-    </audio>
+<div id="app">
+
+  <audio id="snd-trampeln" src="https://raw.githubusercontent.com/Tafelmeister/learnline/main/trampeln.mp3" preload="auto"></audio>
+  <audio id="snd-grunzen"  src="https://raw.githubusercontent.com/Tafelmeister/learnline/main/grunzen.mp3"  preload="auto"></audio>
+  <audio id="snd-pupsen"   src="https://raw.githubusercontent.com/Tafelmeister/learnline/main/pupsen.mp3"   preload="auto"></audio>
+  <audio id="snd-lachen"   src="https://raw.githubusercontent.com/Tafelmeister/learnline/main/lachen.mp3"   preload="auto"></audio>
+
+  <img id="bg" src="https://raw.githubusercontent.com/Tafelmeister/learnline/main/bg_eiche.png" alt="Eiche">
+
+  <button id="fs-btn" onclick="toggleFS()">&#x26F6;</button>
+
+  <div id="startscreen">
+    <div id="starttext">
+  <h1>Hat dich jemand geärgert?</h1>
+  <p class="lead">Es gibt ein Sprichwort:</p>
+  <p class="sprichwort">&bdquo;Was st&ouml;rt es den Baum,<br>
+  wenn sich ein Wildschwein an ihm reibt.&ldquo;</p>
+</div>
+  </div>
+
+  <img id="wildschwein"
+       src="https://raw.githubusercontent.com/Tafelmeister/learnline/main/wildschwein.gif"
+       alt="Wildschwein">
+
+  <div id="finalebild">
+    <img src="https://raw.githubusercontent.com/Tafelmeister/learnline/main/final.png" alt="Ende">
+  </div>
+
+  <div id="button-area">
+    <button id="los-btn"     class="action-btn" onclick="losGehts()">LOS!</button>
+    <button id="trost-btn"   onclick="nextSchritt()">
+      <img id="btn-img" src="https://raw.githubusercontent.com/Tafelmeister/learnline/main/btn1.png" alt="weiter">
+    </button>
+    <button id="nochmal-btn" class="action-btn" onclick="location.reload()">Nochmal</button>
+  </div>
+
+</div>
+
+<script>
+  (function() {
+    var scaleX = window.innerWidth  / 390;
+    var scaleY = window.innerHeight / 844;
+    var scale  = Math.min(scaleX, scaleY);
+    document.documentElement.style.setProperty('--app-scale', scale);
+  })();
+
+  function toggleFS() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(function(){});
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
+  const BASE    = 'https://raw.githubusercontent.com/Tafelmeister/learnline/main/'
+  const btnImgs = ['btn1.png','btn2.png','btn3.png','btn4.png','btn5.png'];
+
+  const losBtn     = document.getElementById('los-btn');
+  const trostBtn   = document.getElementById('trost-btn');
+  const nochmalBtn = document.getElementById('nochmal-btn');
+  const btnImg     = document.getElementById('btn-img');
+  const schwein    = document.getElementById('wildschwein');
+  const startscreen= document.getElementById('startscreen');
+  const finalebild = document.getElementById('finalebild');
+
+  const END   = 95;
+  const START = 420;
+
+  let schritt = 0;
+  let busy    = false;
+
+  function playSound(id) {
+    try { var s=document.getElementById(id); s.currentTime=0; s.play(); } catch(e){}
+  }
+
+  function setBtn(i) { btnImg.src = BASE + btnImgs[i]; }
+
+  function onAnim(name, cb) {
+    function h(e) {
+      if (e.animationName !== name) return;
+      schwein.removeEventListener('animationend', h);
+      cb();
+    }
+    schwein.addEventListener('animationend', h);
+  }
+
+  function stopAnim() {
+    schwein.style.animation = 'none';
+    void schwein.offsetWidth;
+  }
+
+  function losGehts() {
+    losBtn.style.display      = 'none';
+    startscreen.style.display = 'none';
+    busy = true;
+    playSound('snd-trampeln');
+
+    schwein.style.left = START + 'px';
+    void schwein.offsetWidth;
+
+    schwein.style.setProperty('--move', (END - START) + 'px');
+    schwein.style.animation = 'einlaufen 1.6s cubic-bezier(0.25,0.46,0.45,0.94) 1 forwards';
+
+    onAnim('einlaufen', function() {
+      stopAnim();
+      schwein.style.left = END + 'px';
+      schritt = 1;
+      trostBtn.style.display = 'block';
+      setBtn(0);
+      busy = false;
+    });
+  }
+
+  function nextSchritt() {
+    if (busy || schritt === 0) return;
+    busy = true;
+
+    if (schritt === 1) {
+      stopAnim();
+      schwein.style.animation = 'scheuern_wild 0.42s ease-in-out 6 forwards';
+      onAnim('scheuern_wild', function() { stopAnim(); schritt=2; setBtn(1); busy=false; });
+
+    } else if (schritt === 2) {
+      stopAnim();
+      schwein.style.animation = 'scheuern 0.5s ease-in-out 3 forwards';
+      onAnim('scheuern', function() { stopAnim(); schritt=3; setBtn(2); busy=false; });
+
+    } else if (schritt === 3) {
+      playSound('snd-grunzen');
+      stopAnim();
+      schwein.style.animation = 'scheuern 0.5s ease-in-out 3 forwards';
+      onAnim('scheuern', function() { stopAnim(); schritt=4; setBtn(3); busy=false; });
+
+    } else if (schritt === 4) {
+      playSound('snd-pupsen');
+      stopAnim();
+      schwein.style.animation = 'scheuern 0.5s ease-in-out 3 forwards';
+      onAnim('scheuern', function() { stopAnim(); schritt=5; setBtn(4); busy=false; });
+
+    } else if (schritt === 5) {
+      playSound('snd-lachen');
+      schritt = 6;
+      stopAnim();
+      schwein.style.setProperty('--move-out', -(END + 220) + 'px');
+      schwein.style.animation = 'auslaufen 1.0s ease-in 1 forwards';
+
+      onAnim('auslaufen', function() {
+        schwein.style.display  = 'none';
+        trostBtn.style.display = 'none';
+        finalebild.classList.add('sichtbar');
+        setTimeout(function() { finalebild.classList.add('eingeblendet'); }, 50);
+        setTimeout(function() { nochmalBtn.style.display = 'block'; }, 1100);
+      });
+    }
+  }
+</script>
 </body>
 </html>
